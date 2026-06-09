@@ -4,3 +4,6 @@
 Spaceful.app/
 Spaceful.iconset/
 .DS_Store
+
+# Build artifacts (distribués via les Releases)
+Spaceful-*.zip
