@@ -22,6 +22,10 @@ fichiers anciens/volumineux, artefacts de dev). Toute suppression passe par la *
 |---|---|
 | ![Treemap](docs/screenshot-treemap.png) | ![Diagramme soleil](docs/screenshot-sunburst.png) |
 
+| Répartition par type | |
+|---|---|
+| ![Types](docs/screenshot-types.png) | |
+
 ## Lancer
 
 ```bash
@@ -85,14 +89,17 @@ Sources/Spaceful/
 │   ├── Analyzer.swift        Analyse de nettoyage indépendante (5 catégories, 1 passe)
 │   ├── AnalyzerConfig.swift  Tous les seuils réglables (aucun magic number)
 │   ├── DiskSpace.swift       Capacité/espace libre du volume (jauge en tête)
+│   ├── FileIndexer.swift     Parcours unique → totaux par type + plus gros fichiers
 │   └── AppModel.swift        État partagé (@MainActor) : focus, sélection, lot, undo
 ├── Views/                    Vues SwiftUI pures, pilotées par l'AppModel
-│   ├── ContentView.swift     Mise en page 3 colonnes + onglets + alertes + clavier + toast
+│   ├── ContentView.swift     Mise en page 3 colonnes + 4 onglets + clavier + toast
 │   ├── SidebarView.swift     Jauge disque + présélections + progression
 │   ├── DiskGaugeView.swift   Jauge « X libres sur Y » colorée par taux d'occupation
 │   ├── TreemapView.swift     Treemap « squarified » (Canvas), couleur par type, info-bulle
 │   ├── SunburstView.swift    Diagramme soleil concentrique (Canvas), couleur par type
 │   ├── VizLegend.swift       Légende des couleurs par catégorie de fichier
+│   ├── ByTypeView.swift      Onglet « Types » : répartition par catégorie, triable
+│   ├── BiggestFilesView.swift Onglet « Volumineux » : plus gros fichiers + recherche/filtre
 │   ├── DetailListView.swift  Liste triée par taille du dossier courant
 │   ├── Breadcrumb.swift      Fil d'Ariane de navigation
 │   ├── InspectorView.swift   Détails + actions (verrou sur chemins protégés)
@@ -140,16 +147,29 @@ Sources/Spaceful/
   fichiers au contenu identique sont détectés même sous des noms différents (zéro faux positif).
 - **Visualisation par type** : couleur = catégorie de fichier (Photos, Vidéos, Code…),
   avec légende, info-bulles au survol, texte à contraste adaptatif.
+- **4 onglets** : *Visualisation* (treemap/soleil), *Types* (répartition par catégorie,
+  triable), *Volumineux* (plus gros fichiers avec **recherche & filtres** par nom,
+  extension, taille, ancienneté et type), *Nettoyage*.
+- **Cache de scan persistant** : les tailles calculées sont enregistrées sur disque
+  (Application Support) avec invalidation par date de modification — réouverture instantanée.
 - **Jauge d'espace disque** en tête de barre latérale (libres / utilisés).
 - **Clavier** : ↑/↓ sélection, ⌘↓ explorer, ⌘↑ remonter, ⌘⌫ corbeille.
 - **Accessibilité** : treemap et soleil exposent un élément VoiceOver par tuile/secteur.
 
+## Tests
+
+```bash
+swift test
+```
+
+Couvre la classification par type (`FileCategory`), la protection des chemins
+(`SystemPaths`), l'algorithme de treemap (invariants de surface/bornes) et l'`Analyzer`
+(doublons par contenu, détection de caches) sur des fixtures temporaires.
+
 ## Pistes d'évolution
 
-- Vues « Par type de fichier » et « Les plus gros fichiers » (plates, triables).
-- Recherche / filtre (par taille, nom, extension, ancienneté).
-- Persistance d'un cache de scan pour réouverture instantanée.
-- Tests unitaires sur `Analyzer` et sur l'algorithme de treemap.
+- Persistance étendue (arbre complet, pas seulement les tailles).
+- Recalcul incrémental en tâche de fond pour les caches profonds devenus obsolètes.
 - Notarisation Apple pour distribution hors App Store.
 
 ## Licence

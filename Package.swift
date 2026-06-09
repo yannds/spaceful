@@ -11,6 +11,11 @@ let package = Package(
         .executableTarget(
             name: "Spaceful",
             path: "Sources/Spaceful"
+        ),
+        .testTarget(
+            name: "SpacefulTests",
+            dependencies: ["Spaceful"],
+            path: "Tests/SpacefulTests"
         )
     ]
 )

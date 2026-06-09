@@ -2,9 +2,18 @@ import SwiftUI
 
 enum MainTab: String, CaseIterable, Identifiable {
     case explore = "Visualisation"
+    case byType = "Types"
+    case biggest = "Volumineux"
     case clean = "Nettoyage"
     var id: String { rawValue }
-    var symbol: String { self == .explore ? "chart.pie" : "sparkles" }
+    var symbol: String {
+        switch self {
+        case .explore: return "chart.pie"
+        case .byType:  return "chart.bar.doc.horizontal"
+        case .biggest: return "arrow.up.arrow.down.square"
+        case .clean:   return "sparkles"
+        }
+    }
 }
 
 struct ContentView: View {
@@ -38,7 +47,7 @@ struct ContentView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 240)
+                .frame(width: 420)
             }
             ToolbarItem(placement: .primaryAction) {
                 if model.tab == .explore, model.focus != nil {
@@ -62,7 +71,11 @@ struct ContentView: View {
             Button("OK", role: .cancel) { model.errorMessage = nil }
         } message: { msg in Text(msg) }
         .onChange(of: scenePhase) { phase in
-            if phase == .active { model.permissions.refresh() }   // re-check after Settings toggle
+            switch phase {
+            case .active: model.permissions.refresh()   // re-check after Settings toggle
+            case .background: model.persistCache()       // flush size cache on the way out
+            default: break
+            }
         }
     }
 
@@ -78,10 +91,13 @@ struct ContentView: View {
     private var mainArea: some View {
         if model.root == nil && !model.scanner.isSizing {
             EmptyStateView()
-        } else if model.tab == .clean {
-            SuggestionsView()
         } else {
-            ExploreView()
+            switch model.tab {
+            case .explore: ExploreView()
+            case .byType:  ByTypeView()
+            case .biggest: BiggestFilesView()
+            case .clean:   SuggestionsView()
+            }
         }
     }
 

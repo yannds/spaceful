@@ -24,6 +24,7 @@ enum VizMode: String, CaseIterable, Identifiable {
 final class AppModel: ObservableObject {
     let scanner = ScanEngine()
     let analyzer = Analyzer()
+    let indexer = FileIndexer()
     let permissions = PermissionManager()
 
     @Published var focus: FileNode?
@@ -50,6 +51,9 @@ final class AppModel: ObservableObject {
         analyzer.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
+        indexer.objectWillChange
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
         permissions.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
@@ -61,6 +65,9 @@ final class AppModel: ObservableObject {
     func refreshDiskSpace() {
         diskSpace = scanner.root.flatMap { DiskSpace.forVolume(containing: $0.url) } ?? DiskSpace.primary
     }
+
+    /// Flush the size cache to disk (call when the app backgrounds/quits).
+    func persistCache() { scanner.persist() }
 
     /// Distinct categories present under the current focus, for the legend.
     var legendCategories: [FileCategory] {
@@ -108,6 +115,18 @@ final class AppModel: ObservableObject {
     func analyzeCleanup() {
         guard let url = scanner.root?.url else { return }
         analyzer.analyze(url: url)
+    }
+
+    /// Build the flat index (Types / Volumineux) for the current root.
+    func buildIndex() {
+        guard let url = scanner.root?.url else { return }
+        indexer.index(url: url)
+    }
+
+    /// Index on demand the first time those tabs are shown for a new root.
+    func ensureIndexed() {
+        guard let url = scanner.root?.url, !indexer.isIndexing else { return }
+        if indexer.indexedRoot != url.path { indexer.index(url: url) }
     }
 
     func drill(into node: FileNode) {
@@ -165,6 +184,7 @@ final class AppModel: ObservableObject {
                 node.detachFromParent()
                 scanner.invalidateCache(under: node.url.path)
                 pruneSuggestions(matching: node)
+                indexer.removeFiles(under: node.url.path)
             } catch {
                 failures.append(error.localizedDescription)
             }

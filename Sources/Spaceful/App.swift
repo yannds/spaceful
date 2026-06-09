@@ -15,6 +15,7 @@ struct SpacefulApp: App {
                     // handy for "open with", scripting and automated captures.
                     if let url = LaunchOptions.initialFolder { model.startScan(url) }
                     if let viz = LaunchOptions.initialViz { model.vizMode = viz }
+                    if let tab = LaunchOptions.initialTab { model.tab = tab }
                 }
         }
         .windowToolbarStyle(.unified)
@@ -39,6 +40,17 @@ enum LaunchOptions {
     /// Optional initial visualization (`SPACEFUL_VIZ=treemap|sunburst`).
     static var initialViz: VizMode? {
         ProcessInfo.processInfo.environment["SPACEFUL_VIZ"].flatMap(VizMode.init(rawValueLoose:))
+    }
+
+    /// Optional initial tab (`SPACEFUL_TAB=explore|byType|biggest|clean`).
+    static var initialTab: MainTab? {
+        switch ProcessInfo.processInfo.environment["SPACEFUL_TAB"]?.lowercased() {
+        case "explore", "visualisation": return .explore
+        case "bytype", "types":          return .byType
+        case "biggest", "volumineux":    return .biggest
+        case "clean", "nettoyage":       return .clean
+        default:                          return nil
+        }
     }
 }
 

@@ -60,6 +60,9 @@ final class ScanEngine: ObservableObject {
         sizer.invalidate(under: path)
     }
 
+    /// Persist the size cache to disk (instant reopen across launches).
+    func persist() { sizer.saveAsync() }
+
     /// Force-relist a directory from disk (e.g. after an Undo restores files), then resize.
     func reload(_ node: FileNode) {
         guard node.isDirectory, !node.isBundle else { return }
@@ -126,6 +129,7 @@ final class ScanEngine: ObservableObject {
                     self.pendingSizing = max(0, self.pendingSizing - 1)
                     self.aggregate(node)
                     self.revision &+= 1
+                    if self.pendingSizing == 0 { sizer.saveAsync() }   // persist once settled
                 }
             }
             sizingQueue.addOperation(op)

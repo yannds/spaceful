@@ -94,13 +94,22 @@ enum FileCategory: String, CaseIterable, Identifiable {
     private static let diskExt: Set<String> = ["dmg","iso","sparseimage","sparsebundle","img"]
 
     static func of(node: FileNode) -> FileCategory {
-        if SystemPaths.isCritical(node.url) { return .system }
-        if node.isBundle { return .application }
-        if node.isDirectory {
-            if isCacheName(node.name) { return .cache }
-            return .folder
+        classify(name: node.name, isDirectory: node.isDirectory, isBundle: node.isBundle, url: node.url)
+    }
+
+    /// Classify straight from a URL + flags, without needing a `FileNode` — used by the
+    /// flat indexer (Types / Volumineux views).
+    static func of(url: URL, isDirectory: Bool, isBundle: Bool) -> FileCategory {
+        classify(name: url.lastPathComponent, isDirectory: isDirectory, isBundle: isBundle, url: url)
+    }
+
+    static func classify(name: String, isDirectory: Bool, isBundle: Bool, url: URL) -> FileCategory {
+        if SystemPaths.isCritical(url) { return .system }
+        if isBundle { return .application }
+        if isDirectory {
+            return isCacheName(name) ? .cache : .folder
         }
-        let ext = (node.name as NSString).pathExtension.lowercased()
+        let ext = (name as NSString).pathExtension.lowercased()
         if ext.isEmpty { return .other }
         if codeExt.contains(ext)    { return .code }
         if imageExt.contains(ext)   { return .image }

@@ -1,0 +1,9 @@
+# Help GitHub Linguist report this as a Swift project.
+*.swift linguist-language=Swift
+*.sh    linguist-language=Shell
+
+# Don't let docs/assets skew the language stats.
+docs/**           linguist-documentation
+*.png             binary linguist-vendored
+*.icns            binary linguist-vendored
+README.md         linguist-documentation
